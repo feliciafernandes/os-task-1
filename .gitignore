@@ -1,0 +1,24 @@
+﻿# Eclipse Workspace & Plugin Metadata
+.metadata/
+.recommenders/
+.settings/
+*/.settings/
+
+# Compiled Java Bytecode
+bin/
+*/bin/
+*.class
+
+# Python Bytecode & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# OS Generated Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

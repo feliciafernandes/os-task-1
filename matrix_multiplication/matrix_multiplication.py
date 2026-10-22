@@ -1,4 +1,5 @@
 import time
+import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image, ImageDraw, ImageFont
@@ -10,10 +11,32 @@ GIF_OUTPUT = "matrix_multiplication.gif"
 FONT_BOLD = '/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf'
 FONT_REGULAR = '/usr/share/fonts/TTF/JetBrainsMonoNLNerdFont-SemiBold.ttf'
 
-font_header = ImageFont.truetype(FONT_BOLD, 22)
-font_caption = ImageFont.truetype(FONT_BOLD, 14)
-font_stats = ImageFont.truetype(FONT_REGULAR, 13)
-font_operator = ImageFont.truetype(FONT_BOLD, 26)
+def load_font(font_path, size, fallback_name="arial.ttf"):
+    try:
+        return ImageFont.truetype(font_path, size)
+    except OSError:
+        try:
+            return ImageFont.truetype(fallback_name, size)
+        except OSError:
+            return ImageFont.load_default()
+
+font_header = load_font(FONT_BOLD, 22, "arialbd.ttf")
+font_caption = load_font(FONT_BOLD, 14, "arialbd.ttf")
+font_stats = load_font(FONT_REGULAR, 13, "arial.ttf")
+font_operator = load_font(FONT_BOLD, 26, "arialbd.ttf")
+
+def get_ffmpeg_cmd():
+    bin_path = shutil.which("ffmpeg")
+    if bin_path:
+        return bin_path
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+FFMPEG_EXE = get_ffmpeg_cmd()
+
 
 
 def create_matrices(size):
@@ -80,7 +103,7 @@ def render_visualization(mat_x, mat_y, result_mat, event_log):
     total_frames = (len(event_log) + chunk_size - 1) // chunk_size
 
     ffmpeg_process = subprocess.Popen([
-        'ffmpeg', '-y',
+        FFMPEG_EXE, '-y',
         '-f', 'rawvideo',
         '-vcodec', 'rawvideo',
         '-s', f'{canvas_width}x{canvas_height}',
@@ -163,7 +186,7 @@ def render_visualization(mat_x, mat_y, result_mat, event_log):
     ffmpeg_process.wait()
 
     gif_cmd = [
-        'ffmpeg', '-y',
+        FFMPEG_EXE, '-y',
         '-i', MP4_OUTPUT,
         '-vf', 'fps=15,scale=1000:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3',
         GIF_OUTPUT
